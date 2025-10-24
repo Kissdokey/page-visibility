@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Visibility API 测试 - 主页</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status-panel {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .status-value {
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #FFD700;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 10px;
+        }
+        
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn-external {
+            background: linear-gradient(45deg, #9b59b6, #e74c3c);
+        }
+        
+        .log-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid #4CAF50;
+            padding-left: 10px;
+        }
+        
+        .log-entry.hidden {
+            border-left-color: #FF9800;
+            background: rgba(255, 152, 0, 0.1);
+        }
+        
+        .log-entry.visible {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .log-entry.beacon {
+            border-left-color: #2196F3;
+            background: rgba(33, 150, 243, 0.1);
+        }
+        
+        .instructions {
+            background: rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #FFC107;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #FFC107;
+        }
+        
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .clear-btn {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Page Visibility API 测试</h1>
+        
+        <div class="status-panel">
+            <div class="status-item">
+                <span>当前可见性状态:</span>
+                <span class="status-value" id="visibilityState">-</span>
+            </div>
+            <div class="status-item">
+                <span>页面是否隐藏:</span>
+                <span class="status-value" id="hidden">-</span>
+            </div>
+            <div class="status-item">
+                <span>支持 Page Visibility API:</span>
+                <span class="status-value" id="apiSupport">-</span>
+            </div>
+            <div class="status-item">
+                <span>页面加载时间:</span>
+                <span class="status-value" id="loadTime">-</span>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 测试说明</h3>
+            <p><strong>不销毁页面的测试（观察控制台日志）:</strong></p>
+            <ul>
+                <li>🔄 <strong>切换标签页</strong>: 在当前浏览器中打开新标签页或切换到其他标签页</li>
+                <li>📉 <strong>最小化窗口</strong>: 最小化浏览器窗口</li>
+                <li>🖥️ <strong>切换应用</strong>: Alt+Tab切换到其他应用程序</li>
+                <li>📱 <strong>覆盖窗口</strong>: 打开其他应用完全覆盖浏览器窗口</li>
+            </ul>
+            <p><strong>销毁页面的测试（观察服务器日志）:</strong></p>
+            <ul>
+                <li>🔄 <strong>刷新页面</strong>: F5或Ctrl+R刷新页面</li>
+                <li>❌ <strong>关闭标签页</strong>: Ctrl+W关闭当前标签页</li>
+                <li>🔗 <strong>页面跳转</strong>: 点击下方按钮进行各种跳转测试</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 本站页面跳转测试</h3>
+            <div class="test-buttons">
+                <a href="page2.html" class="btn">跳转到页面2 (同标签)</a>
+                <a href="page2.html" target="_blank" class="btn">跳转到页面2 (新标签)</a>
+                <a href="page3.html" class="btn">跳转到页面3 (同标签)</a>
+                <a href="page3.html" target="_blank" class="btn">跳转到页面3 (新标签)</a>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🌐 外站页面跳转测试</h3>
+            <div class="test-buttons">
+                <a href="https://www.baidu.com" class="btn btn-external">跳转到百度 (同标签)</a>
+                <a href="https://www.baidu.com" target="_blank" class="btn btn-external">跳转到百度 (新标签)</a>
+                <a href="https://www.github.com" class="btn btn-external">跳转到GitHub (同标签)</a>
+                <a href="https://www.github.com" target="_blank" class="btn btn-external">跳转到GitHub (新标签)</a>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 其他测试功能</h3>
+            <div class="test-buttons">
+                <button class="btn" onclick="window.location.reload()">刷新页面</button>
+                <button class="btn" onclick="window.close()">关闭窗口</button>
+                <button class="btn" onclick="history.back()">后退</button>
+                <button class="btn" onclick="history.forward()">前进</button>
+                <button class="btn clear-btn" onclick="clearLogs()">清空日志</button>
+            </div>
+        </div>
+        
+        <div class="log-panel">
+            <h3>📊 事件日志 (实时更新)</h3>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let logContainer;
+        let visibilityStateElement;
+        let hiddenElement;
+        let apiSupportElement;
+        let loadTimeElement;
+        let pageLoadTime = new Date();
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            logContainer = document.getElementById('logContainer');
+            visibilityStateElement = document.getElementById('visibilityState');
+            hiddenElement = document.getElementById('hidden');
+            apiSupportElement = document.getElementById('apiSupport');
+            loadTimeElement = document.getElementById('loadTime');
+            
+            // 检查API支持
+            const isSupported = typeof document.hidden !== 'undefined';
+            apiSupportElement.textContent = isSupported ? '✅ 支持' : '❌ 不支持';
+            
+            // 显示页面加载时间
+            loadTimeElement.textContent = pageLoadTime.toLocaleTimeString();
+            
+            // 初始状态
+            updateVisibilityStatus();
+            
+            // 添加初始日志
+            addLog('页面加载完成', 'visible');
+            
+            // 监听 visibilitychange 事件
+            if (isSupported) {
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                addLog('✅ 已注册 visibilitychange 事件监听器', 'visible');
+            } else {
+                addLog('❌ 浏览器不支持 Page Visibility API', 'visible');
+            }
+            
+            // 监听页面卸载事件
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            window.addEventListener('unload', handleUnload);
+            window.addEventListener('pagehide', handlePageHide);
+            
+            // 发送页面加载beacon
+            sendBeacon('pageload', '页面加载');
+        });
+        
+        // 更新可见性状态显示
+        function updateVisibilityStatus() {
+            if (typeof document.hidden !== 'undefined') {
+                visibilityStateElement.textContent = document.visibilityState;
+                hiddenElement.textContent = document.hidden ? '是' : '否';
+            }
+        }
+        
+        // 处理可见性变化事件
+        function handleVisibilityChange() {
+            const now = new Date();
+            const isHidden = document.hidden;
+            const visibilityState = document.visibilityState;
+            
+            updateVisibilityStatus();
+            
+            const message = `可见性变化: ${visibilityState} (隐藏: ${isHidden})`;
+            const logType = isHidden ? 'hidden' : 'visible';
+            
+            // 控制台日志
+            console.log(`[${now.toISOString()}] ${message}`);
+            
+            // 页面日志
+            addLog(message, logType);
+            
+            // 发送beacon数据
+            sendBeacon('visibilitychange', message, {
+                isHidden: isHidden,
+                visibilityState: visibilityState
+            });
+        }
+        
+        // 处理页面卸载前事件
+        function handleBeforeUnload(event) {
+            const message = '页面即将卸载 (beforeunload)';
+            console.log(`[${new Date().toISOString()}] ${message}`);
+            addLog(message, 'beacon');
+            sendBeacon('beforeunload', message);
+        }
+        
+        // 处理页面卸载事件
+        function handleUnload(event) {
+            const message = '页面卸载 (unload)';
+            console.log(`[${new Date().toISOString()}] ${message}`);
+            sendBeacon('unload', message);
+        }
+        
+        // 处理页面隐藏事件
+        function handlePageHide(event) {
+            const message = `页面隐藏 (pagehide) - persisted: ${event.persisted}`;
+            console.log(`[${new Date().toISOString()}] ${message}`);
+            addLog(message, 'beacon');
+            sendBeacon('pagehide', message, { persisted: event.persisted });
+        }
+        
+        // 发送beacon数据到服务器
+        function sendBeacon(eventType, reason, extraData = {}) {
+            if (!navigator.sendBeacon) {
+                console.warn('浏览器不支持 sendBeacon API');
+                return;
+            }
+            
+            const data = {
+                eventType: eventType,
+                reason: reason,
+                pageUrl: window.location.href,
+                visibilityState: document.visibilityState,
+                hidden: document.hidden,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                referrer: document.referrer,
+                ...extraData
+            };
+            
+            const success = navigator.sendBeacon(
+                'http://localhost:3000/api/beacon',
+                JSON.stringify(data)
+            );
+            
+            const message = `📡 发送Beacon: ${eventType} - ${success ? '成功' : '失败'}`;
+            console.log(`[${new Date().toISOString()}] ${message}`);
+            addLog(message, 'beacon');
+        }
+        
+        // 添加日志到页面
+        function addLog(message, type = 'visible') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            
+            // 限制日志数量
+            const logs = logContainer.querySelectorAll('.log-entry');
+            if (logs.length > 50) {
+                logContainer.removeChild(logs[logs.length - 1]);
+            }
+        }
+        
+        // 清空日志
+        function clearLogs() {
+            logContainer.innerHTML = '';
+            addLog('日志已清空', 'visible');
+        }
+        
+        // 页面获得焦点时
+        window.addEventListener('focus', function() {
+            addLog('页面获得焦点 (focus)', 'visible');
+        });
+        
+        // 页面失去焦点时
+        window.addEventListener('blur', function() {
+            addLog('页面失去焦点 (blur)', 'hidden');
+        });
+        
+        // 监听页面显示事件（从bfcache恢复）
+        window.addEventListener('pageshow', function(event) {
+            const message = `页面显示 (pageshow) - persisted: ${event.persisted}`;
+            addLog(message, 'visible');
+            if (event.persisted) {
+                sendBeacon('bfcache-restore', '从bfcache恢复');
+            }
+        });
+    </script>
+</body>
+</html>
